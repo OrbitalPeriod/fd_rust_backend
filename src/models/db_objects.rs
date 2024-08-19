@@ -1,18 +1,27 @@
+
+
 use serde::de::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;
+use sqlx::mysql::types;
 use sqlx::mysql::MySqlRow;
 use sqlx::prelude::FromRow;
 use sqlx::Column;
+use sqlx::Database;
+use sqlx::Decode;
+use sqlx::MySql;
 use sqlx::MySqlPool;
 use sqlx::Row;
+use sqlx::Type;
+use tracing::warn;
+use tracing::{info, debug};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Boolean(bool);
 
 impl From<i8> for Boolean {
     fn from(value: i8) -> Self {
-        if value == 0{
+        if value == 0 {
             Boolean(false)
         } else {
             Boolean(true)
@@ -20,6 +29,20 @@ impl From<i8> for Boolean {
     }
 }
 
+impl<'r, DB : Database> sqlx::Decode<'r, DB> for Boolean
+where i8: Decode<'r, DB>
+{
+    fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
+        let number = <i8 as Decode<DB>>::decode(value)?;
+        Ok(Boolean::from(number))
+    }
+}
+
+impl Type<MySql> for Boolean{
+    fn type_info() -> <MySql as Database>::TypeInfo {
+        <i8 as Type<MySql>>::type_info()
+    }
+}
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Driver {
@@ -30,7 +53,7 @@ pub struct Driver {
     pub seats: Vec<Seat>,
 }
 
-#[derive(Debug, serde::Serialize, sqlx::FromRow)]
+#[derive(Debug, serde::Serialize, sqlx::FromRow, Clone)]
 pub struct DriverInfo {
     pub driver_id: i32,
     pub username: String,
@@ -77,8 +100,8 @@ pub enum Position {
 impl Position {
     pub fn new(position: i32) -> Self {
         match position {
-            111 => Position::Dnf,
-            101 => Position::Dsq,
+            101 => Position::Dnf,
+            111 => Position::Dsq,
             100 => Position::Dns,
             _ => Position::Finished(position),
         }
@@ -110,8 +133,59 @@ impl<'r> FromRow<'r, MySqlRow> for Position {
     }
 }
 
+impl<'r, DB : Database> sqlx::Decode<'r, DB> for Position
+where i32: Decode<'r, DB>
+{
+    fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
+        let number = <i32 as Decode<DB>>::decode(value)?;
+        Ok(Position::new(number))
+    }
+}
+
+impl Type<MySql> for Position{
+    fn type_info() -> <MySql as Database>::TypeInfo {
+        <i32 as Type<MySql>>::type_info()
+    }
+}
+
 impl From<i32> for Position {
     fn from(value: i32) -> Self {
         Position::new(value)
     }
+}
+
+#[derive(Debug, Clone, Serialize, FromRow)]
+pub struct Season {
+    pub season: i32,
+    pub season_name: String,
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct SeasonInfo{
+    pub season : Season,
+    pub races: Vec<Race>,
+}
+
+#[derive(Debug, Serialize, Clone)]
+pub struct Race{
+    pub race_name : String,
+    pub season : i32,
+    pub results : Vec<PersonalResult>,
+}
+
+#[derive(Debug, Serialize, FromRow, Clone)]
+pub struct RaceInfo{
+    pub race_name : String,
+    pub season : i32,
+    pub race_id : i32,
+}
+
+#[derive(Debug, Serialize, FromRow, Clone)]
+pub struct PersonalResult{
+    #[sqlx(flatten)]
+    pub race_result : RaceResult,
+    #[sqlx(flatten)]
+    pub driver_info : DriverInfo,
+    #[sqlx(flatten)]
+    pub team : Team,
 }

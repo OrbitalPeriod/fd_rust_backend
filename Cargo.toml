@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 actix-web = "4.9.0"
 dotenv = "0.15.0"
+itertools = "0.13.0"
 serde = { version = "1.0.208", features = ["derive"] }
 sqlx = { version = "0.8.0", features = ["mysql", "runtime-tokio"] }
 tokio = "1.39.3"

@@ -13,7 +13,7 @@ pub fn config(cfg: &mut web::ServiceConfig) {
 }
 
 async fn test() -> &'static str {
-    "Hello, World!"
+    "Driver route test"
 }
 
 async fn get_all_drivers(pool: web::Data<MySqlPool>) -> ApiResponse<Vec<DriverInfo>> {
