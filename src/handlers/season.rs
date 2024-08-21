@@ -14,8 +14,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("{season}/info").get(get_season_info));
 }
 
-async fn test() -> &'static str {
-    "Season route test"
+async fn test() -> ApiResponse<()> {
+    ApiResponse::new_ok_no_data("Season test route")
 }
 
 async fn get_all_seasons(pool: web::Data<MySqlPool>) -> ApiResponse<Vec<Season>> {

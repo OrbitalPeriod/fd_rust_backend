@@ -15,6 +15,7 @@ use sqlx::Row;
 use sqlx::Type;
 use tracing::warn;
 use tracing::{info, debug};
+use serde::Serializer;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Boolean(bool);
@@ -89,7 +90,7 @@ pub struct RaceResult {
     pub points: i32,
 }
 
-#[derive(Debug, Clone, Serialize)]
+#[derive(Debug, Clone)]
 pub enum Position {
     Finished(i32),
     Dnf,
@@ -105,6 +106,21 @@ impl Position {
             100 => Position::Dns,
             _ => Position::Finished(position),
         }
+    }
+}
+
+impl Serialize for Position {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let value = match *self {
+            Position::Finished(pos) => pos,
+            Position::Dnf => 101,
+            Position::Dsq => 111,
+            Position::Dns => 100,
+        };
+        serializer.serialize_i32(value)
     }
 }
 

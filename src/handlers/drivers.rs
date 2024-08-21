@@ -12,8 +12,8 @@ pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/{driver_id}/info").get(get_driver_information));
 }
 
-async fn test() -> &'static str {
-    "Driver route test"
+async fn test() -> ApiResponse<()> {
+    ApiResponse::new_ok_no_data("Driver route test")
 }
 
 async fn get_all_drivers(pool: web::Data<MySqlPool>) -> ApiResponse<Vec<DriverInfo>> {
