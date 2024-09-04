@@ -3,47 +3,17 @@
 use serde::de::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;
-use sqlx::mysql::types;
-use sqlx::mysql::MySqlRow;
 use sqlx::prelude::FromRow;
 use sqlx::Column;
 use sqlx::Database;
 use sqlx::Decode;
-use sqlx::MySql;
-use sqlx::MySqlPool;
+use sqlx::Postgres;
 use sqlx::Row;
 use sqlx::Type;
 use tracing::warn;
 use tracing::{info, debug};
 use serde::Serializer;
-
-#[derive(Debug, Clone, Serialize)]
-pub struct Boolean(bool);
-
-impl From<i8> for Boolean {
-    fn from(value: i8) -> Self {
-        if value == 0 {
-            Boolean(false)
-        } else {
-            Boolean(true)
-        }
-    }
-}
-
-impl<'r, DB : Database> sqlx::Decode<'r, DB> for Boolean
-where i8: Decode<'r, DB>
-{
-    fn decode(value: <DB as Database>::ValueRef<'r>) -> Result<Self, sqlx::error::BoxDynError> {
-        let number = <i8 as Decode<DB>>::decode(value)?;
-        Ok(Boolean::from(number))
-    }
-}
-
-impl Type<MySql> for Boolean{
-    fn type_info() -> <MySql as Database>::TypeInfo {
-        <i8 as Type<MySql>>::type_info()
-    }
-}
+use sqlx::postgres::PgRow;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct Driver {
@@ -73,16 +43,16 @@ pub struct Seat {
 pub struct Team {
     pub team_id: i32,
     pub name: String,
-    pub color: String,
+    pub color: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, FromRow)]
 pub struct RaceResult {
     pub position: Position,
-    pub bot_result: Boolean,
-    pub pole: Boolean,
-    pub leading_lap: Boolean,
-    pub fastest_lap: Boolean,
+    pub bot_result: bool,
+    pub pole: bool,
+    pub leading_lap: bool,
+    pub fastest_lap: bool,
     pub qualy_result: Option<i32>,
     pub season: i32,
     pub race_id: i32,
@@ -137,8 +107,8 @@ impl<'de> Deserialize<'de> for Position {
     }
 }
 
-impl<'r> FromRow<'r, MySqlRow> for Position {
-    fn from_row(row: &MySqlRow) -> sqlx::Result<Self> {
+impl<'r> FromRow<'r, PgRow> for Position {
+    fn from_row(row: &PgRow) -> sqlx::Result<Self> {
         let value: Result<i32, sqlx::Error> = row.try_get("position");
         match value {
             Ok(value) => Ok(Position::Finished(value)),
@@ -158,9 +128,9 @@ where i32: Decode<'r, DB>
     }
 }
 
-impl Type<MySql> for Position{
-    fn type_info() -> <MySql as Database>::TypeInfo {
-        <i32 as Type<MySql>>::type_info()
+impl Type<Postgres> for Position{
+    fn type_info() -> <Postgres as Database>::TypeInfo {
+        <i32 as Type<Postgres>>::type_info()
     }
 }
 

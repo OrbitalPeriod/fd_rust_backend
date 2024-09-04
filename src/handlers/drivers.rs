@@ -1,5 +1,5 @@
 use actix_web::web;
-use sqlx::MySqlPool;
+use sqlx::{Pool, Postgres};
 use tokio::task::JoinSet;
 use tracing::{info, warn};
 
@@ -16,7 +16,7 @@ async fn test() -> ApiResponse<()> {
     ApiResponse::new_ok_no_data("Driver route test")
 }
 
-async fn get_all_drivers(pool: web::Data<MySqlPool>) -> ApiResponse<Vec<DriverInfo>> {
+async fn get_all_drivers(pool: web::Data<Pool<Postgres>>) -> ApiResponse<Vec<DriverInfo>> {
     let pool = pool.get_ref();
     let query = sqlx::query_as!(
         DriverInfo,
@@ -36,7 +36,7 @@ async fn get_all_drivers(pool: web::Data<MySqlPool>) -> ApiResponse<Vec<DriverIn
 }
 
 async fn get_driver_information(
-    pool: web::Data<MySqlPool>,
+    pool: web::Data<Pool<Postgres>>,
     driver_id: web::Path<i32>,
 ) -> ApiResponse<Driver> {
     let pool = pool.get_ref();
@@ -44,7 +44,7 @@ async fn get_driver_information(
 
     let driver_info = sqlx::query_as!(
         DriverInfo,
-        "SELECT driver_id, username, driver_number, driver_image_url FROM driver WHERE driver_id = ?",
+        "SELECT driver_id, username, driver_number, driver_image_url FROM driver WHERE driver_id = $1",
         driver_id
     )
     .fetch_one(pool)
@@ -64,7 +64,7 @@ async fn get_driver_information(
     };
 
     let seat_id = sqlx::query!(
-        "SELECT seat_id FROM drives_in WHERE driver_id = ?",
+        "SELECT seat_id FROM drives_in WHERE driver_id = $1",
         driver_id
     ).fetch_all(pool).await;
 
@@ -102,7 +102,7 @@ async fn get_driver_information(
                     AND result.leading_lap = points.leading_lap 
                     AND result.fastest_lap = points.fastest_lap 
                     AND races.season = points.season
-                WHERE result_id IN (SELECT result_id FROM has_result WHERE seat_id = ?);
+                WHERE result_id IN (SELECT result_id FROM has_result WHERE seat_id = $1);
                 "#,
                 seat_id
             ).fetch_all(&pool).await;
@@ -119,7 +119,7 @@ async fn get_driver_information(
             
             let teams = sqlx::query_as!(
                 Team,
-                "SELECT team_id, name, color FROM team WHERE team_id IN (SELECT team_id FROM drives_for WHERE drives_for.seat_id = ?)",
+                "SELECT team_id, name, color FROM team WHERE team_id IN (SELECT team_id FROM drives_for WHERE drives_for.seat_id = $1)",
                 seat_id
             ).fetch_all(&pool).await;
     

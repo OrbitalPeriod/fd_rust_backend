@@ -1,8 +1,8 @@
 use std::result;
 
 use actix_web::web;
+use sqlx::{Pool, Postgres};
 use itertools::Itertools;
-use sqlx::MySqlPool;
 use tracing::warn;
 
 use crate::models::api_response::ApiResponse;
@@ -18,7 +18,7 @@ async fn test() -> ApiResponse<()> {
     ApiResponse::new_ok_no_data("Season test route")
 }
 
-async fn get_all_seasons(pool: web::Data<MySqlPool>) -> ApiResponse<Vec<Season>> {
+async fn get_all_seasons(pool: web::Data<Pool<Postgres>>) -> ApiResponse<Vec<Season>> {
     let pool = pool.get_ref();
 
     let seasons = sqlx::query_as!(Season, "SELECT season, season_name FROM seasons")
@@ -35,7 +35,7 @@ async fn get_all_seasons(pool: web::Data<MySqlPool>) -> ApiResponse<Vec<Season>>
 }
 
 async fn get_season_info(
-    pool: web::Data<MySqlPool>,
+    pool: web::Data<Pool<Postgres>>,
     season: web::Path<i32>,
 ) -> ApiResponse<SeasonInfo> {
     let pool = pool.get_ref();
@@ -44,7 +44,7 @@ async fn get_season_info(
     let season = {
         let season = sqlx::query_as!(
             Season,
-            "SELECT season, season_name FROM seasons WHERE season = ?",
+            "SELECT season, season_name FROM seasons WHERE season = $1",
             season_number
         )
         .fetch_one(pool)

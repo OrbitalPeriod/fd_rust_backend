@@ -4,7 +4,7 @@ use actix_web::{
     web::{self, route, Data},
     App, HttpServer,
 };
-use sqlx::{MySql, Pool};
+use sqlx::{Pool, Postgres};
 use tracing::{info, warn};
 use tracing_actix_web::TracingLogger;
 
@@ -17,6 +17,8 @@ mod utils;
 async fn main() {
     set_logging();
     info!("Starting server");
+
+    
 
     dotenv::dotenv().expect("Failed to read .env file");
     let pool = configure_sql_connection().await;
@@ -45,11 +47,12 @@ fn set_logging() {
     tracing_subscriber::fmt().with_max_level(level).init();
 }
 
-async fn configure_sql_connection() -> Pool<MySql> {
+async fn configure_sql_connection() -> Pool<Postgres> {
     let url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
-    sqlx::MySqlPool::connect(&url)
+    sqlx::postgres::PgPoolOptions::new()
+        .connect(&url)
         .await
-        .expect("failed to connect to database")
+        .expect("Something went wrong connecting to the db")
 }
 
 //todo: implement serialzize for Position enum
