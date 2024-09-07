@@ -1,5 +1,6 @@
 
 
+use chrono::Utc;
 use serde::de::Deserialize;
 use serde::Deserializer;
 use serde::Serialize;
@@ -21,6 +22,8 @@ pub struct Driver {
     pub driver_number: i32,
     pub driver_image_url: String,
     pub driver_id: i32,
+    pub country : String,
+    pub birthday :  Option<chrono::NaiveDate>,
     pub seats: Vec<Seat>,
 }
 
@@ -30,6 +33,8 @@ pub struct DriverInfo {
     pub username: String,
     pub driver_number: i32,
     pub driver_image_url: String,
+    pub country : String,
+    pub birthday : Option<chrono::NaiveDate>,
 }
 
 #[derive(Debug, Clone, Serialize)]

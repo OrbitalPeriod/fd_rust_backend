@@ -20,7 +20,7 @@ async fn get_all_drivers(pool: web::Data<Pool<Postgres>>) -> ApiResponse<Vec<Dri
     let pool = pool.get_ref();
     let query = sqlx::query_as!(
         DriverInfo,
-        "SELECT driver_id, username, driver_number, driver_image_url FROM driver"
+        "SELECT driver_id, username, driver_number, driver_image_url, country, birthday FROM driver"
     )
     .fetch_all(pool)
     .await;
@@ -44,7 +44,7 @@ async fn get_driver_information(
 
     let driver_info = sqlx::query_as!(
         DriverInfo,
-        "SELECT driver_id, username, driver_number, driver_image_url FROM driver WHERE driver_id = $1",
+        "SELECT driver_id, username, driver_number, driver_image_url, birthday, country FROM driver WHERE driver_id = $1",
         driver_id
     )
     .fetch_one(pool)
@@ -153,6 +153,8 @@ async fn get_driver_information(
         username: driver_info.username,
         driver_number: driver_info.driver_number,
         driver_image_url: driver_info.driver_image_url,
+        country: driver_info.country,
+        birthday: driver_info.birthday,
         seats,
     })
 }
