@@ -5,6 +5,7 @@ use actix_web::{
     App, HttpServer,
 };
 use sqlx::{Pool, Postgres};
+use tokio::time::sleep;
 use tracing::{info, warn};
 use tracing_actix_web::TracingLogger;
 
@@ -18,11 +19,20 @@ async fn main() {
     set_logging();
     info!("Starting server");
 
-    
-
     dotenv::dotenv().expect("Failed to read .env file");
     let pool = configure_sql_connection().await;
     info!("Connected to database");
+
+    let status_pool = pool.clone();
+    tokio::spawn(async move {
+        let interval = std::time::Duration::from_secs(60);
+        loop{   
+            if let Err(e) = utils::db::update_season_results(&status_pool).await{
+                println!("Refresh failed: {}", e);
+            };
+            sleep(interval).await;
+        }
+    });
 
     HttpServer::new(move || {
         App::new()
@@ -55,6 +65,7 @@ async fn configure_sql_connection() -> Pool<Postgres> {
         .expect("Something went wrong connecting to the db")
 }
 
-//todo: implement serialzize for Position enum
+//Add season_results to a driver
+//Refactor DB interactions
 
 //cargo watch -x 'run' -c
