@@ -49,7 +49,7 @@ pub struct DriverInfo {
 pub struct Seat {
     pub seat_id: i32,
     pub results: Vec<RaceResult>,
-    pub team: Vec<Team>,
+    pub team: Team,
 }
 
 #[derive(Debug, Clone, Serialize, FromRow)]

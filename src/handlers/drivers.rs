@@ -125,7 +125,7 @@ async fn get_driver_information(
                 Team,
                 "SELECT team_id, name, color FROM team WHERE team_id IN (SELECT team_id FROM drives_for WHERE drives_for.seat_id = $1)",
                 seat_id
-            ).fetch_all(&pool).await;
+            ).fetch_one(&pool).await;
     
             let teams = match teams {
                 Ok(teams) => teams,
