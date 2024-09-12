@@ -25,6 +25,14 @@ pub struct Driver {
     pub country : String,
     pub birthday :  Option<chrono::NaiveDate>,
     pub seats: Vec<Seat>,
+    pub season_results : Vec<SeasonResult>
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct SeasonResult{
+    pub driver_result : i32,
+    pub team_result : i32,
+    pub season : i32,
 }
 
 #[derive(Debug, serde::Serialize, sqlx::FromRow, Clone)]

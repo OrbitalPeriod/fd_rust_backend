@@ -65,7 +65,7 @@ async fn configure_sql_connection() -> Pool<Postgres> {
         .expect("Something went wrong connecting to the db")
 }
 
-//Add season_results to a driver
-//Refactor DB interactions
+//Parse sqlx::error into apiresponse
+//Refactor DB interactionsm
 
 //cargo watch -x 'run' -c

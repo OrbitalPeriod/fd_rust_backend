@@ -3,7 +3,7 @@ use std::{collections::HashMap, error::Error};
 use sqlx::{Database, Executor, Pool, Postgres};
 use tracing::warn;
 
-use crate::models::db_objects::Team;
+use crate::models::db_objects::{SeasonResult, Team};
 
 pub async fn update_season_results(pool: &Pool<Postgres>) -> Result<(), Box<dyn Error>> {
     let mut tx = pool.begin().await?;
@@ -91,4 +91,16 @@ where
     )
     .fetch_all(pool)
     .await
+}
+
+pub async fn get_season_results<'e, 'c, T>(
+    pool: T,
+    driver_id: i32,
+) -> Result<Vec<SeasonResult>, sqlx::Error>
+where
+    T: 'e + Executor<'c, Database = Postgres>,
+{
+    sqlx::query_as!(SeasonResult, 
+        "SELECT driver_result, team_result, season FROM season_result WHERE driver_id = $1"
+        , driver_id).fetch_all(pool).await
 }

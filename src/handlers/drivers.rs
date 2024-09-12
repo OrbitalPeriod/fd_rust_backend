@@ -1,10 +1,11 @@
 use actix_web::web;
 use sqlx::{Pool, Postgres};
-use tokio::task::JoinSet;
+use tokio::task::{JoinHandle, JoinSet};
 use tracing::{info, warn};
 
 use crate::models::api_response::ApiResponse;
 use crate::models::db_objects::*;
+use crate::utils::db;
 
 pub fn config(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/test").to(test));
@@ -41,6 +42,9 @@ async fn get_driver_information(
 ) -> ApiResponse<Driver> {
     let pool = pool.get_ref();
     let driver_id: i32 = driver_id.into_inner();
+
+    let ref_pool = pool.clone();
+    let season_results_handle : JoinHandle<Result<Vec<SeasonResult>,sqlx::Error>> = tokio::spawn(async move {db::get_season_results(&ref_pool, driver_id).await});
 
     let driver_info = sqlx::query_as!(
         DriverInfo,
@@ -147,6 +151,17 @@ async fn get_driver_information(
         }
     }
 
+    let season_results = match season_results_handle.await{
+        Ok(Ok(results)) => results,
+        Ok(e) => {
+            warn!("Something went wrong querying database: {e:?}");
+            return ApiResponse::new_internal_error("Something went wrong querying the database");
+        },
+        Err(e) => {
+            warn!("Failed to spawn thread: {e:?}");
+            return ApiResponse::new_internal_error("Something went wrong handling thread");
+        }
+    };
 
     ApiResponse::new_ok("succes", Driver{
         driver_id: driver_info.driver_id,
@@ -156,5 +171,6 @@ async fn get_driver_information(
         country: driver_info.country,
         birthday: driver_info.birthday,
         seats,
+        season_results
     })
 }
